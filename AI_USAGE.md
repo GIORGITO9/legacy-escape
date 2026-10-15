@@ -41,3 +41,10 @@
 - Prompt principal (resumido): "revisa todo de nuevo contra la rúbrica antes de entregar"
 - Qué produjo: la auditoría registraba todas las peticiones, incluidas las del healthcheck de Docker a /health
 - Qué modificó o corrigió el equipo: el healthcheck escribía una línea anónima cada 5 segundos y llenaba el log de ruido, así que dejamos fuera la sonda /health y mantenemos registrados los intentos sin token
+
+## Uso 7
+- Herramienta: Claude Code (Claude Opus)
+- Para qué se usó: agregar pruebas automáticas para Subsidios por el gateway, la app móvil de solo lectura y el 409 por requestId reutilizado
+- Prompt principal (resumido): "revisa nuevamente lo que piden y cubre con pruebas lo que falta"
+- Qué produjo: una prueba del 409 que reutilizaba el mismo requestId de la prueba de idempotencia
+- Qué modificó o corrigió el equipo: al correr la suite completa falló la prueba de idempotencia porque pytest ejecutó primero la del 409 y ya existía ese requestId; le dimos a cada prueba su propio afiliado y requestId para que no dependan del orden
