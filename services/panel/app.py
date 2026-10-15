@@ -46,7 +46,7 @@ def call(method, path, body=None):
 _migration = {"at": 0.0, "domains": {}}
 
 
-def migration_domains(ttl=15):
+def migration_domains(ttl=3):
     """Estado de migración con caché: el sondeo del panel no debe llenar la auditoría."""
     if time.time() - _migration["at"] > ttl or not _migration["domains"]:
         status, body = call("GET", "/api/v1/migration/status")
