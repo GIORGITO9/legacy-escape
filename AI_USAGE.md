@@ -27,3 +27,17 @@
 - Prompt principal (resumido): "al menos 10 pruebas de contrato contra la API corriendo, incluido un retiro real"
 - Qué produjo: la idea inicial de probar el retiro con un afiliado de los datos sintéticos
 - Qué modificó o corrigió el equipo: retirar afiliados reales cambiaba los datos y los conteos de activeMembers que revisa el calificador, por eso las pruebas crean su propia empresa y afiliados de prueba y los borran al terminar
+
+## Uso 5
+- Herramienta: Claude Code (Claude Opus)
+- Para qué se usó: hacer que el gateway responda 503 en menos de 3 segundos cuando se detiene legacy-db (prueba G10)
+- Prompt principal (resumido): "con docker compose stop legacy-db la consulta tarda casi 4 segundos, el límite es 3"
+- Qué produjo: la primera versión del adapter conectaba por nombre de host con connect_timeout de 2 segundos
+- Qué modificó o corrigió el equipo: medimos con curl y vimos que el DNS de Docker tarda unos 4 segundos en fallar con el contenedor detenido; agregamos un monitor que guarda la IP de la base y una sonda TCP de 0,5 s, y el peor caso bajó a 0,5 s
+
+## Uso 6
+- Herramienta: Claude Code (Claude Opus)
+- Para qué se usó: revisar la auditoría en logs/audit.log contra la regla de una línea JSON por petición de consumidor
+- Prompt principal (resumido): "revisa todo de nuevo contra la rúbrica antes de entregar"
+- Qué produjo: la auditoría registraba todas las peticiones, incluidas las del healthcheck de Docker a /health
+- Qué modificó o corrigió el equipo: el healthcheck escribía una línea anónima cada 5 segundos y llenaba el log de ruido, así que dejamos fuera la sonda /health y mantenemos registrados los intentos sin token

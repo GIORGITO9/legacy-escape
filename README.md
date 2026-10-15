@@ -134,8 +134,8 @@ El reporte JUnit queda en `test-results/junit.xml`.
 - Portal, Subsidios y móvil consumen la API sin conocer el esquema: todo el SQL vive en el adapter.
 - El cambio de esquema (`scripts/schema-change.sh`) no afecta la API: el adapter detecta `PERSON_MASTER` y sigue respondiendo idéntico sin reiniciar.
 - Los retiros pasan por el gateway, quedan en el legacy (Educación los ve) y son idempotentes con una tabla de `requestId` escrita en la misma transacción, evitando el duplicado del incidente de 2021.
-- Con la base caída las consultas responden 503 controlado en menos de 3 segundos y los retiros se aceptan con 202 en una cola persistente que se aplica una sola vez al recuperarse, evitando la pérdida del incidente de 2023.
-- La auditoría enmascara los documentos (incidente de 2025) y `./rollback.sh affiliations` devuelve Subsidios al procedimiento legacy.
+- Con la base caída las consultas responden 503 controlado en menos de medio segundo (un monitor guarda la IP de la base y evita esperar al DNS de Docker) y los retiros se aceptan con 202 en una cola persistente que se aplica una sola vez al recuperarse, evitando la pérdida del incidente de 2023.
+- La auditoría enmascara los documentos (incidente de 2025), no se llena con el healthcheck, y `./rollback.sh affiliations` devuelve Subsidios al procedimiento legacy.
 
 ## Limitaciones y pendientes
 
