@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Legacy Escape</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card: rgba(255, 255, 255, 0.78);
+    --card-solid: #ffffff;
+    --text: #1d1d1f;
+    --secondary: #6e6e73;
+    --tertiary: #86868b;
+    --separator: rgba(60, 60, 67, 0.12);
+    --fill: rgba(120, 120, 128, 0.12);
+    --blue: #007aff;
+    --green: #34c759;
+    --orange: #ff9500;
+    --red: #ff3b30;
+    --indigo: #5856d6;
+    --gray: #8e8e93;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 28px rgba(0, 0, 0, 0.06);
+    --radius: 20px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --card: rgba(28, 28, 30, 0.78);
+      --card-solid: #1c1c1e;
+      --text: #f5f5f7;
+      --secondary: #a1a1a6;
+      --tertiary: #8e8e93;
+      --separator: rgba(84, 84, 88, 0.45);
+      --fill: rgba(120, 120, 128, 0.24);
+      --blue: #0a84ff;
+      --green: #30d158;
+      --orange: #ff9f0a;
+      --red: #ff453a;
+      --indigo: #5e5ce6;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 28px rgba(0, 0, 0, 0.35);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.01em;
+    min-height: 100vh;
+  }
+  body::before {
+    content: ""; position: fixed; inset: -20% -10% auto -10%; height: 70vh; z-index: -1;
+    background: radial-gradient(ellipse at 20% 20%, rgba(0, 122, 255, 0.16), transparent 55%),
+                radial-gradient(ellipse at 80% 0%, rgba(88, 86, 214, 0.14), transparent 50%),
+                radial-gradient(ellipse at 60% 40%, rgba(52, 199, 89, 0.08), transparent 55%);
+    filter: blur(20px);
+  }
+  .mono { font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; letter-spacing: 0; }
+
+  /* Barra superior translúcida */
+  nav {
+    position: sticky; top: 0; z-index: 10;
+    backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+    background: color-mix(in srgb, var(--bg) 72%, transparent);
+    border-bottom: 0.5px solid var(--separator);
+  }
+  .nav-inner { max-width: 1180px; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 17px; }
+  .logo {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--blue), var(--indigo));
+    display: grid; place-items: center; color: white; font-size: 15px; font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.35);
+  }
+  .pills { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px;
+    background: var(--fill); font-size: 13px; font-weight: 500; color: var(--secondary); white-space: nowrap;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray); }
+  .dot.up { background: var(--green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 25%, transparent); }
+  .dot.down { background: var(--red); box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 25%, transparent); animation: pulse 1.4s infinite; }
+  @keyframes pulse { 50% { opacity: 0.35; } }
+
+  main { max-width: 1180px; margin: 0 auto; padding: 36px 24px 80px; }
+  .hero h1 { font-size: 48px; line-height: 1.05; font-weight: 700; letter-spacing: -0.035em; }
+  .hero p { margin-top: 10px; font-size: 19px; color: var(--secondary); max-width: 680px; line-height: 1.4; }
+
+  /* Buscador */
+  .search { margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .field {
+    flex: 1 1 360px; display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 18px;
+    background: var(--card-solid); border-radius: 14px; box-shadow: var(--shadow);
+    border: 0.5px solid var(--separator); transition: box-shadow .2s;
+  }
+  .field:focus-within { box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 25%, transparent), var(--shadow); }
+  .field svg { width: 18px; height: 18px; color: var(--tertiary); flex: none; }
+  .field input { flex: 1; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 17px; }
+  .btn {
+    height: 52px; padding: 0 24px; border-radius: 14px; border: 0; cursor: pointer;
+    font: inherit; font-size: 17px; font-weight: 600; transition: transform .12s, opacity .2s, background .2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--blue); color: white; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-danger { background: color-mix(in srgb, var(--red) 12%, transparent); color: var(--red); height: 44px; font-size: 15px; }
+  .btn-danger:hover { background: color-mix(in srgb, var(--red) 18%, transparent); }
+  .btn-plain { background: var(--fill); color: var(--text); height: 44px; font-size: 15px; }
+  .btn:disabled { opacity: 0.4; cursor: default; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; align-items: center; }
+  .chips span { font-size: 13px; color: var(--tertiary); margin-right: 2px; }
+  .chip {
+    border: 0; cursor: pointer; padding: 7px 13px; border-radius: 999px; font: inherit; font-size: 13px;
+    background: var(--card-solid); color: var(--blue); box-shadow: var(--shadow); font-weight: 500;
+  }
+  .chip:hover { background: color-mix(in srgb, var(--blue) 10%, var(--card-solid)); }
+
+  /* Rejilla */
+  .grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 20px; margin-top: 32px; }
+  @media (max-width: 920px) { .grid { grid-template-columns: 1fr; } .hero h1 { font-size: 36px; } }
+  .stack { display: grid; gap: 20px; align-content: start; }
+  .card {
+    background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+    border: 0.5px solid var(--separator); padding: 22px;
+    backdrop-filter: saturate(180%) blur(24px); -webkit-backdrop-filter: saturate(180%) blur(24px);
+  }
+  .card h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--tertiary); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card h2 .count { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 500; }
+
+  /* Ficha del afiliado */
+  .profile { display: flex; gap: 18px; align-items: center; }
+  .avatar {
+    width: 72px; height: 72px; border-radius: 50%; flex: none; display: grid; place-items: center;
+    font-size: 26px; font-weight: 600; color: white;
+    background: linear-gradient(135deg, #64d2ff, var(--blue) 55%, var(--indigo));
+    box-shadow: 0 6px 18px rgba(0, 122, 255, 0.3);
+  }
+  .profile h3 { font-size: 28px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.15; }
+  .profile .meta { color: var(--secondary); font-size: 15px; margin-top: 4px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+  .badge.ACTIVE { background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green); }
+  .badge.RETIRED { background: var(--fill); color: var(--secondary); }
+  .badge.SUSPENDED { background: color-mix(in srgb, var(--orange) 16%, transparent); color: var(--orange); }
+  .badge.LEGACY { background: var(--fill); color: var(--secondary); }
+  .badge.DUAL { background: color-mix(in srgb, var(--blue) 14%, transparent); color: var(--blue); }
+  .badge.MODERN { background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green); }
+  .facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 22px; }
+  @media (max-width: 560px) { .facts { grid-template-columns: 1fr; } }
+  .fact { background: var(--fill); border-radius: 14px; padding: 14px 16px; min-width: 0; }
+  .fact .k { font-size: 12px; color: var(--tertiary); font-weight: 500; }
+  .fact .v { font-size: 17px; font-weight: 600; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fact .v.big { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; }
+  .actions { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* Listas estilo iOS */
+  .list { border-radius: 14px; overflow: hidden; background: var(--card-solid); border: 0.5px solid var(--separator); }
+  .row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-height: 52px; }
+  .row + .row { border-top: 0.5px solid var(--separator); }
+  .row .icon { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; font-size: 15px; flex: none; color: white; }
+  .row .main { flex: 1; min-width: 0; }
+  .row .title { font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .sub { font-size: 13px; color: var(--secondary); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .trail { font-size: 13px; color: var(--secondary); flex: none; text-align: right; }
+  .code { font-weight: 700; }
+  .code.ok { color: var(--green); } .code.warn { color: var(--orange); } .code.err { color: var(--red); }
+  .empty { padding: 26px 16px; text-align: center; color: var(--tertiary); font-size: 15px; }
+
+  .placeholder { text-align: center; padding: 56px 20px; color: var(--secondary); }
+  .placeholder .glyph { font-size: 44px; margin-bottom: 12px; }
+  .placeholder h3 { font-size: 22px; color: var(--text); font-weight: 600; margin-bottom: 6px; }
+
+  .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--secondary); }
+  .flow b { background: var(--fill); color: var(--text); padding: 6px 10px; border-radius: 9px; font-weight: 600; }
+
+  /* Hoja modal */
+  .backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.32); display: none; align-items: flex-end; justify-content: center; z-index: 20; padding: 20px; }
+  .backdrop.open { display: flex; animation: fade .2s; }
+  @media (min-width: 640px) { .backdrop { align-items: center; } }
+  .sheet { width: 100%; max-width: 440px; background: var(--card-solid); border-radius: 24px; padding: 26px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); animation: rise .28s cubic-bezier(.2, .9, .3, 1.1); }
+  .sheet h3 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+  .sheet p { color: var(--secondary); font-size: 15px; margin-top: 6px; line-height: 1.4; }
+  .sheet label { display: block; font-size: 13px; color: var(--tertiary); font-weight: 500; margin: 18px 0 6px; }
+  .sheet input { width: 100%; height: 46px; border-radius: 12px; border: 0; background: var(--fill); color: var(--text); padding: 0 14px; font: inherit; font-size: 17px; outline: none; }
+  .sheet input:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 30%, transparent); }
+  .sheet .actions { justify-content: flex-end; margin-top: 24px; }
+  .sheet .btn-confirm { background: var(--red); color: white; height: 44px; font-size: 15px; }
+  @keyframes fade { from { opacity: 0; } }
+  @keyframes rise { from { transform: translateY(24px) scale(.98); opacity: 0; } }
+
+  /* Aviso flotante */
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 140%); z-index: 30;
+    background: color-mix(in srgb, var(--card-solid) 88%, transparent); color: var(--text);
+    backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border: 0.5px solid var(--separator); border-radius: 18px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+    padding: 14px 18px; display: flex; gap: 12px; align-items: center; max-width: calc(100% - 32px); width: max-content;
+    transition: transform .4s cubic-bezier(.2, .9, .3, 1.1);
+  }
+  .toast.show { transform: translate(-50%, 0); }
+  .toast .ticon { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: white; font-weight: 700; flex: none; }
+  .toast b { display: block; font-size: 15px; }
+  .toast small { color: var(--secondary); font-size: 13px; }
+  .spinner { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid color-mix(in srgb, white 35%, transparent); border-top-color: white; animation: spin .7s linear infinite; display: inline-block; vertical-align: -3px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  footer { text-align: center; color: var(--tertiary); font-size: 12px; margin-top: 48px; }
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <div class="brand"><div class="logo">L</div>Legacy Escape</div>
+    <div class="pills">
+      <span class="pill"><span class="dot" id="dot-gateway"></span>Gateway</span>
+      <span class="pill"><span class="dot" id="dot-legacy"></span>Legacy</span>
+      <span class="pill" id="pill-aff">Afiliaciones · —</span>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <section class="hero">
+    <h1>Afiliaciones,<br>sin apagar el legacy.</h1>
+    <p>Consulta afiliados y registra retiros a través del gateway. La base heredada sigue siendo la fuente de verdad, y Educación lo ve todo al instante.</p>
+  </section>
+
+  <form class="search" id="search" autocomplete="off">
+    <label class="field">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="doc" inputmode="numeric" placeholder="Número de documento" aria-label="Número de documento">
+    </label>
+    <button class="btn btn-primary" id="go">Buscar</button>
+  </form>
+  <div class="chips">
+    <span>Prueba con</span>
+    <button class="chip" data-doc="1019282447">1019282447</button>
+    <button class="chip" data-doc="13149818">13149818</button>
+    <button class="chip" data-doc="1040629446">1040629446</button>
+    <button class="chip" data-doc="1322694345">1322694345</button>
+  </div>
+
+  <div class="grid">
+    <div class="stack" id="result">
+      <div class="card placeholder">
+        <div class="glyph">🔎</div>
+        <h3>Busca un afiliado</h3>
+        <div>Ingresa un documento para ver su ficha, beneficiarios y empresa.</div>
+      </div>
+    </div>
+
+    <aside class="stack">
+      <div class="card">
+        <h2>Estado de la migración</h2>
+        <div class="list" id="domains"><div class="empty">Cargando…</div></div>
+        <div class="flow" style="margin-top:16px">
+          <b>Portal · Subsidios · Móvil</b>→<b>Gateway</b>→<b>Adapter</b>→<b>Legacy</b>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Auditoría en vivo <span class="count" id="audit-count"></span></h2>
+        <div class="list" id="audit"><div class="empty">Sin peticiones todavía</div></div>
+      </div>
+    </aside>
+  </div>
+  <footer>FESC Legacy Challenge 2026 · Nivel Tecnólogo · Los documentos se muestran enmascarados en la auditoría</footer>
+</main>
+
+<div class="backdrop" id="sheet-bg">
+  <form class="sheet" id="sheet">
+    <h3>Registrar retiro</h3>
+    <p id="sheet-text"></p>
+    <label for="r-date">Fecha de retiro</label>
+    <input type="date" id="r-date" required>
+    <label for="r-reason">Motivo</label>
+    <input id="r-reason" maxlength="200" value="Retiro voluntario">
+    <div class="actions">
+      <button type="button" class="btn btn-plain" id="cancel">Cancelar</button>
+      <button class="btn btn-confirm" id="confirm">Registrar retiro</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast"><div class="ticon" id="ticon">✓</div><div><b id="ttitle"></b><small id="tsub"></small></div></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const STATUS = { ACTIVE: "Activo", RETIRED: "Retirado", SUSPENDED: "Suspendido" };
+const REL = { SPOUSE: ["Cónyuge", "#ff2d55", "♥"], CHILD: ["Hijo(a)", "#ff9500", "★"], FATHER: ["Padre", "#5856d6", "P"], MOTHER: ["Madre", "#af52de", "M"] };
+const DOMAINS = { affiliations: ["Afiliaciones", "#007aff", "A"], companies: ["Empresas", "#34c759", "E"], contributions: ["Aportes", "#ff9500", "$"] };
+const CONSUMER = { portal: ["#007aff", "P"], subsidios: ["#34c759", "S"], mobile: ["#af52de", "M"], anonymous: ["#8e8e93", "?"] };
+let current = null;
+let toastTimer = null;
+
+function toast(kind, title, sub) {
+  const colors = { ok: "var(--green)", warn: "var(--orange)", err: "var(--red)", info: "var(--blue)" };
+  const icons = { ok: "✓", warn: "⏳", err: "!", info: "i" };
+  $("ticon").style.background = colors[kind]; $("ticon").textContent = icons[kind];
+  $("ttitle").textContent = title; $("tsub").textContent = sub || "";
+  $("toast").classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => $("toast").classList.remove("show"), 4200);
+}
+
+function initials(name) { return name.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join(""); }
+function title(name) { return name.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase()); }
+
+async function lookup(doc) {
+  doc = String(doc || "").replace(/\D/g, "");
+  if (!doc) return;
+  $("doc").value = doc;
+  $("go").innerHTML = '<span class="spinner"></span>';
+  try {
+    const res = await fetch("/api/members/" + doc);
+    const data = await res.json();
+    if (res.status === 200) { current = data; render(data); }
+    else if (res.status === 404) showEmpty("🤷", "No encontramos ese documento", "Revisa el número e inténtalo de nuevo.");
+    else if (res.status === 503) showEmpty("🔌", "El sistema legacy no está disponible", "El gateway respondió 503 LEGACY_UNAVAILABLE de forma controlada. Intenta en un momento.");
+    else showEmpty("⚠️", "No se pudo consultar", data.message || ("HTTP " + res.status));
+  } catch (e) {
+    showEmpty("⚠️", "Panel sin conexión", "No fue posible contactar el gateway.");
+  } finally {
+    $("go").textContent = "Buscar";
+    refresh();
+  }
+}
+
+function showEmpty(glyph, h, text) {
+  current = null;
+  $("result").innerHTML = `<div class="card placeholder"><div class="glyph">${glyph}</div><h3>${esc(h)}</h3><div>${esc(text)}</div></div>`;
+}
+
+function render({ member, beneficiaries, company }) {
+  const comp = company || member.company || {};
+  const bens = beneficiaries.length ? beneficiaries.map((b) => {
+    const [label, color, icon] = REL[b.relationship] || [b.relationship, "#8e8e93", "•"];
+    return `<div class="row"><div class="icon" style="background:${color}">${icon}</div>
+      <div class="main"><div class="title">${esc(title(b.fullName))}</div><div class="sub mono">${esc(b.document)}</div></div>
+      <div class="trail">${esc(label)}</div></div>`;
+  }).join("") : '<div class="empty">Sin beneficiarios registrados</div>';
+  const retired = member.status === "RETIRED";
+  $("result").innerHTML = `
+    <div class="card">
+      <div class="profile">
+        <div class="avatar">${esc(initials(member.fullName))}</div>
+        <div style="min-width:0">
+          <h3>${esc(title(member.fullName))}</h3>
+          <div class="meta"><span class="mono">CC ${esc(member.document)}</span><span class="badge ${esc(member.status)}">● ${esc(STATUS[member.status] || member.status)}</span></div>
+        </div>
+      </div>
+      <div class="facts">
+        <div class="fact"><div class="k">Empresa</div><div class="v" title="${esc(comp.name)}">${esc(title(comp.name || "—"))}</div></div>
+        <div class="fact"><div class="k">Código empresa</div><div class="v mono">${esc(comp.id || "—")}</div></div>
+        <div class="fact"><div class="k">Afiliados activos</div><div class="v big">${company ? esc(company.activeMembers) : "—"}</div></div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-danger" id="retire" ${retired ? "disabled" : ""}>${retired ? "Afiliado ya retirado" : "Registrar retiro"}</button>
+        <button class="btn btn-plain" id="reload">Actualizar</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Beneficiarios <span class="count">${beneficiaries.length}</span></h2>
+      <div class="list">${bens}</div>
+    </div>`;
+  $("retire").onclick = openSheet;
+  $("reload").onclick = () => lookup(member.document);
+}
+
+function openSheet() {
+  if (!current) return;
+  $("sheet-text").textContent = `${title(current.member.fullName)} pasará a estado Retirado. El retiro se registra por el gateway y queda en la base legacy.`;
+  $("r-date").value = new Date().toISOString().slice(0, 10);
+  $("sheet-bg").classList.add("open");
+}
+function closeSheet() { $("sheet-bg").classList.remove("open"); }
+
+async function retire(ev) {
+  ev.preventDefault();
+  const doc = current.member.document;
+  const requestId = (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(16).slice(2));
+  $("confirm").innerHTML = '<span class="spinner"></span>';
+  try {
+    const res = await fetch(`/api/members/${doc}/retirements`, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ requestId, date: $("r-date").value, reason: $("r-reason").value }) });
+    const data = await res.json();
+    closeSheet();
+    if (res.status === 201) toast("ok", "Retiro registrado", `Quedó en el legacy · movimiento #${data.movementId}`);
+    else if (res.status === 200) toast("info", "Solicitud repetida", "El mismo requestId no se duplicó");
+    else if (res.status === 202) toast("warn", "Legacy caído: retiro en cola", "Se aplicará una sola vez cuando vuelva la base");
+    else toast("err", "No se pudo registrar", data.message || ("HTTP " + res.status));
+    setTimeout(() => lookup(doc), 400);
+  } catch (e) {
+    toast("err", "Panel sin conexión", "No fue posible contactar el gateway");
+  } finally {
+    $("confirm").textContent = "Registrar retiro";
+  }
+}
+
+async function refresh() {
+  try {
+    const s = await (await fetch("/api/status")).json();
+    $("dot-gateway").className = "dot " + (s.gateway === "UP" ? "up" : "down");
+    $("dot-legacy").className = "dot " + (s.legacy === "UP" ? "up" : "down");
+    const aff = (s.domains || {}).affiliations || "—";
+    $("pill-aff").innerHTML = `Afiliaciones · <span class="badge ${esc(aff)}" style="padding:1px 8px">${esc(aff)}</span>`;
+    const rows = Object.entries(DOMAINS).map(([key, [label, color, icon]]) => {
+      const state = (s.domains || {})[key] || "—";
+      return `<div class="row"><div class="icon" style="background:${color}">${icon}</div>
+        <div class="main"><div class="title">${label}</div><div class="sub mono">${key}</div></div>
+        <span class="badge ${esc(state)}">${esc(state)}</span></div>`;
+    }).join("");
+    $("domains").innerHTML = rows;
+  } catch (e) {
+    $("dot-gateway").className = "dot down"; $("dot-legacy").className = "dot";
+  }
+  try {
+    const entries = await (await fetch("/api/audit")).json();
+    $("audit-count").textContent = entries.length ? `últimas ${entries.length}` : "";
+    $("audit").innerHTML = entries.length ? entries.slice(0, 8).map((e) => {
+      const [color, icon] = CONSUMER[e.consumer] || CONSUMER.anonymous;
+      const cls = e.status < 300 ? "ok" : e.status < 500 && e.status !== 404 ? "warn" : e.status === 404 ? "warn" : "err";
+      const time = new Date(e.timestamp).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      return `<div class="row"><div class="icon" style="background:${color}">${icon}</div>
+        <div class="main"><div class="title mono" style="font-size:13px">${esc(e.method || "")} ${esc(e.endpoint)}</div>
+        <div class="sub">${esc(e.consumer)} · ${esc(time)}</div></div>
+        <div class="trail"><div class="code ${cls}">${esc(e.status)}</div>${esc(e.latency_ms)} ms</div></div>`;
+    }).join("") : '<div class="empty">Sin peticiones todavía</div>';
+  } catch (e) { /* el panel sigue funcionando sin auditoría */ }
+}
+
+$("search").addEventListener("submit", (e) => { e.preventDefault(); lookup($("doc").value); });
+document.querySelectorAll(".chip").forEach((c) => c.addEventListener("click", () => lookup(c.dataset.doc)));
+$("cancel").onclick = closeSheet;
+$("sheet-bg").addEventListener("click", (e) => { if (e.target === $("sheet-bg")) closeSheet(); });
+$("sheet").addEventListener("submit", retire);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheet(); });
+refresh();
+setInterval(refresh, 2500);
+</script>
+</body>
+</html>

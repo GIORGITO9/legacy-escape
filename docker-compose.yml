@@ -65,6 +65,19 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Panel web de demostración (estilo Apple): solo habla HTTP con el gateway, nunca con legacy-db.
+  panel-web:
+    build: ./services/panel
+    env_file: .env
+    environment:
+      AUDIT_LOG_PATH: /logs/audit.log
+    ports:
+      - "${PANEL_PORT:-8093}:8093"
+    volumes:
+      - ./logs:/logs:ro
+    depends_on:
+      - gateway
+
   # Pruebas automatizadas del equipo: docker compose --profile test run --rm tests
   tests:
     build: ./tests
