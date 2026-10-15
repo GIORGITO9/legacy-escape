@@ -12,10 +12,11 @@ La Caja de Compensación opera sobre una base legacy (réplica de Informix/Gener
 - **portal-client:** solo habla HTTP con `GATEWAY_URL`.
 - **panel-web:** panel de demostración (puerto 8093) que consume el gateway por HTTP con `PORTAL_TOKEN` guardado en el servidor; permite buscar afiliados, registrar retiros y ver el estado del legacy, la migración y la auditoría en vivo.
 - **subsidios-app:** registra los retiros por el gateway con `SUBSIDIOS_TOKEN`; si Afiliaciones está en LEGACY o el gateway está desactivado, usa el procedimiento directamente (camino de rollback).
+- **mobile-app:** app móvil del evento 3 (puerto 8094), nuevo consumidor de solo lectura: consulta afiliados y beneficiarios con `MOBILE_TOKEN` y el gateway le responde 403 si intenta escribir.
 - **educacion-app:** sigue leyendo la base sin cambios y ve los retiros porque se escriben en el legacy.
 - **tests:** pruebas de contrato con pytest contra la API en funcionamiento (perfil `test`).
 
-Flujo: `Portal / Subsidios / Móvil → Gateway API → Modelo canónico → Adapter → legacy-db ← Educación`.
+Flujo: `Portal / Panel / Subsidios / App móvil → Gateway API → Modelo canónico → Adapter → legacy-db ← Educación`.
 
 ## Modelo canónico
 

@@ -14,7 +14,7 @@ Capa de transición para modernizar el sistema legacy de una Caja de Compensaci�
 - Docker Engine 24 o superior con Docker Compose v2 (`docker compose`).
 - Linux, macOS o Windows con Docker Desktop (los scripts se ejecutan con `bash`).
 - Python 3.8+ solo para correr `./validator` en la máquina anfitriona.
-- Puertos libres: 8082 (gateway), 8090, 8091, 8092 y 8093 (panel web).
+- Puertos libres: 8082 (gateway), 8090, 8091, 8092, 8093 (panel web) y 8094 (app móvil).
 
 ## Instalación y ejecución
 
@@ -35,7 +35,7 @@ Para devolver Afiliaciones al camino legacy (rollback, termina en segundos con c
 ./rollback.sh affiliations
 ```
 
-Panel web: abrir http://localhost:8093 en el navegador.
+Interfaces: panel web en http://localhost:8093 y app móvil en http://localhost:8094 (abrir en el navegador).
 
 Para volver a avanzar el dominio: `./scripts/migration-state.sh affiliations DUAL`. Para reiniciar todo desde cero: `./reset.sh`.
 
@@ -58,7 +58,7 @@ Todas las variables están en `.env.example`; se copian a `.env` (que no se vers
 ## Arquitectura
 
 ```text
-portal-client / panel-web / subsidios-app / app móvil → gateway (API v1 + modelo canónico + adapter) → legacy-db ← educacion-app
+portal-client / panel-web / mobile-app / subsidios-app → gateway (API v1 + modelo canónico + adapter) → legacy-db ← educacion-app
 ```
 
 - `legacy-db`: PostgreSQL con las tablas heredadas y el procedimiento de retiros.
@@ -67,6 +67,7 @@ portal-client / panel-web / subsidios-app / app móvil → gateway (API v1 + mod
 - `subsidios-app`: registra los retiros por el gateway con `SUBSIDIOS_TOKEN`; si Afiliaciones está en LEGACY o el gateway no existe, usa el procedimiento legacy (rollback).
 - `educacion-app`: lee la base directamente, sin cambios, y ve los retiros porque se escriben en el legacy.
 - `panel-web`: panel web de demostración en http://localhost:8093 (estilo Apple). Busca afiliados, muestra beneficiarios y empresa, registra retiros, y muestra en vivo el estado del legacy, la migración y la auditoría. Igual que el portal, solo habla HTTP con el gateway usando `PORTAL_TOKEN` del lado del servidor.
+- `mobile-app`: app móvil de afiliados en http://localhost:8094 (evento 3, nuevo consumidor). Consulta afiliados y beneficiarios con `MOBILE_TOKEN`, sin acceso a la base y sin permisos de escritura: si intenta registrar un retiro, el gateway responde 403.
 - `tests`: pruebas automatizadas de contrato (perfil `test`).
 
 El detalle está en [docs/architecture.md](docs/architecture.md).
@@ -112,11 +113,12 @@ curl -H "Authorization: Bearer $PORTAL_TOKEN" http://localhost:8082/api/v1/migra
 ```
 
 Subsidios sigue respondiendo igual: `POST http://localhost:8091/retiros` con `{"documento", "fecha", "motivo"}`.
+Reutilizar un `requestId` para otro afiliado responde `409`. Las interfaces gráficas están en http://localhost:8093 (panel) y http://localhost:8094 (app móvil).
 Errores: `{"message", "error_id"}`; legacy caído: `503` con `"code": "LEGACY_UNAVAILABLE"` en menos de 3 segundos.
 
 ## Pruebas
 
-La suite en `tests/` (pytest) prueba la API en funcionamiento: salud, autenticación (401 sin token o con token inválido), permisos de la app móvil (lee 200, escribe 403), formato canónico del afiliado sin columnas legacy, beneficiarios y parentescos, conteo de afiliados activos por empresa, errores 404 con `error_id`, retiro visible en la base legacy, idempotencia por `requestId` (un solo movimiento), existencia del procedimiento legacy, estado de migración y auditoría enmascarada. Crea sus propios datos de prueba y los borra al terminar. Se ejecuta con el entorno levantado:
+La suite en `tests/` (pytest) prueba la API en funcionamiento: salud, autenticación (401 sin token o con token inválido), permisos de la app móvil (lee 200, escribe 403), formato canónico del afiliado sin columnas legacy, beneficiarios y parentescos, conteo de afiliados activos por empresa, errores 404 con `error_id`, retiro visible en la base legacy, idempotencia por `requestId` (un solo movimiento), existencia del procedimiento legacy, estado de migración, auditoría enmascarada, retiro desde Subsidios que pasa por el gateway una sola vez, app móvil de solo lectura (403 al escribir), 409 por `requestId` reutilizado y 405 por método no permitido (23 pruebas). Crea sus propios datos de prueba y los borra al terminar. Se ejecuta con el entorno levantado:
 
 ```bash
 docker compose --profile test run --rm tests
@@ -139,6 +141,8 @@ El reporte JUnit queda en `test-results/junit.xml`.
 - Los retiros pasan por el gateway, quedan en el legacy (Educación los ve) y son idempotentes con una tabla de `requestId` escrita en la misma transacción, evitando el duplicado del incidente de 2021.
 - Con la base caída las consultas responden 503 controlado en menos de medio segundo (un monitor guarda la IP de la base y evita esperar al DNS de Docker) y los retiros se aceptan con 202 en una cola persistente que se aplica una sola vez al recuperarse, evitando la pérdida del incidente de 2023.
 - La auditoría enmascara los documentos (incidente de 2025), no se llena con el healthcheck, y `./rollback.sh affiliations` devuelve Subsidios al procedimiento legacy.
+- Construimos la app móvil (evento 3) como consumidor de solo lectura con `MOBILE_TOKEN` y un panel web de demostración; ninguno toca la base.
+- Un `requestId` reutilizado para otro afiliado ahora responde 409 en vez de devolver el retiro de otra persona.
 
 ## Limitaciones y pendientes
 
