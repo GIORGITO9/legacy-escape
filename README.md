@@ -133,6 +133,7 @@ El reporte JUnit queda en `test-results/junit.xml`.
 - [docs/migration-plan.md](docs/migration-plan.md): estados por dominio, criterios y rollback.
 - [openapi.yaml](openapi.yaml): contrato v1 en OpenAPI 3.
 - [AI_USAGE.md](AI_USAGE.md): cómo usamos la inteligencia artificial.
+- [docs/demo.md](docs/demo.md): guía de demostración paso a paso (panel, app móvil, caída, cambio de esquema y rollback).
 
 ## Qué resolvimos
 
