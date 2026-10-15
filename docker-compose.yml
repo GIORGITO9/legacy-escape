@@ -101,6 +101,10 @@ services:
     depends_on:
       gateway:
         condition: service_healthy
+      subsidios-app:
+        condition: service_started
+      mobile-app:
+        condition: service_started
 
 volumes:
   legacy-db-data:

@@ -94,16 +94,19 @@ def legacy():
 
 @pytest.fixture(scope="session")
 def sample(legacy, api):
-    """Empresa de prueba con 3 afiliados activos (uno se retira en las pruebas), 1 suspendido y 2 beneficiarios."""
+    """Empresa de prueba con 5 afiliados activos (tres se retiran en las pruebas), 1 suspendido y 2 beneficiarios."""
     suffix = "".join(random.choice("0123456789") for _ in range(7))
     company = "T" + suffix[:6]
     docs = {"active": "98" + suffix + "1", "active2": "98" + suffix + "2",
-            "suspended": "98" + suffix + "3", "retire": "98" + suffix + "4"}
+            "suspended": "98" + suffix + "3", "retire": "98" + suffix + "4", "subsidios": "98" + suffix + "5",
+            "conflict": "98" + suffix + "6"}
     bens = {"spouse": "97" + suffix + "1", "child": "97" + suffix + "2"}
     legacy.run("INSERT INTO empresa (cod_emp, nom_emp, nit, est_emp) VALUES (%s, %s, %s, 'A')",
                (company, "EMPRESA DE PRUEBAS SAS", "900000000"))
     members = [(docs["active"], "ANA", "MARIA", "PRUEBA", "UNO", "A"), (docs["active2"], "LUIS", None, "PRUEBA", None, "A"),
-               (docs["suspended"], "JUAN", None, "PRUEBA", "TRES", "S"), (docs["retire"], "SOFIA", None, "PRUEBA", "CUATRO", "A")]
+               (docs["suspended"], "JUAN", None, "PRUEBA", "TRES", "S"), (docs["retire"], "SOFIA", None, "PRUEBA", "CUATRO", "A"),
+               (docs["subsidios"], "PABLO", None, "PRUEBA", "CINCO", "A"),
+               (docs["conflict"], "LAURA", None, "PRUEBA", "SEIS", "A")]
     for doc, n1, n2, a1, a2, status in members:
         legacy.run("INSERT INTO {t} ({d}, tip_doc, nom1, nom2, ape1, ape2, {s}, cod_emp, fec_afi) "
                    "VALUES (%s, 'CC', %s, %s, %s, %s, %s, %s, DATE '2020-01-01')", (doc, n1, n2, a1, a2, status, company))
