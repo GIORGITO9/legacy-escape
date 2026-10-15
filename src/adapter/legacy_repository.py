@@ -61,8 +61,19 @@ class LegacyMonitor:
     def __init__(self, host, port, interval=1.0):
         self.host, self.port, self.interval = host, port, interval
         self.address = None   # última IP que respondió
-        self.up = None        # None = todavía no se sabe
+        self.up = False       # hasta la primera verificación (milisegundos si la base está arriba)
         threading.Thread(target=self._loop, name="legacy-monitor", daemon=True).start()
+
+    def reachable(self):
+        """Sonda TCP rápida (0,5 s) a la última IP conocida, sin pasar por el DNS."""
+        if not (self.up and self.address):
+            return False
+        try:
+            with socket.create_connection((self.address, self.port), timeout=0.5):
+                return True
+        except OSError:
+            self.up = False
+            return False
 
     def check(self):
         try:
@@ -94,14 +105,13 @@ class LegacyRepository:
     # ------------------------------------------------------------------ conexión
 
     def _connect(self):
-        if self.monitor.up is False:
-            raise LegacyUnavailable("legacy fuera de servicio (monitor)")
-        address = {"hostaddr": self.monitor.address} if self.monitor.up and self.monitor.address else {}
+        if not self.monitor.reachable():
+            raise LegacyUnavailable("legacy fuera de servicio")
         try:
             return psycopg2.connect(
                 host=self._host,
+                hostaddr=self.monitor.address,
                 port=self._port,
-                **address,
                 dbname=os.environ.get("POSTGRES_DB", "legacy"),
                 user=os.environ.get("POSTGRES_USER", "legacy"),
                 password=os.environ.get("POSTGRES_PASSWORD", ""),

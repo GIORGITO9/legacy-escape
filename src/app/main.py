@@ -205,7 +205,8 @@ class Handler(BaseHTTPRequestHandler):
         body = self.rfile.read(length) if length > 0 else b""
         consumer, path, status, payload = GATEWAY.dispatch(method, self.path, self.headers, body)
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        GATEWAY.audit.write(consumer, method, path, status, int(round((time.monotonic() - started) * 1000)))
+        if path != "/health":  # la sonda de salud (healthcheck de Docker) no es una petición de consumidor
+            GATEWAY.audit.write(consumer, method, path, status, int(round((time.monotonic() - started) * 1000)))
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(data)))
