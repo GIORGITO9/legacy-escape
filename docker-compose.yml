@@ -1,0 +1,85 @@
+name: legacy-escape
+
+services:
+  legacy-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-legacy}
+      POSTGRES_USER: ${POSTGRES_USER:-legacy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-legacy}
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+      - legacy-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  # Educación: lee la base directamente. NO SE PUEDE MODIFICAR.
+  educacion-app:
+    build: ./services/educacion
+    env_file: .env
+    ports:
+      - "${EDUCACION_PORT:-8090}:8090"
+    depends_on:
+      legacy-db:
+        condition: service_healthy
+
+  # Portal de servicios: solo habla HTTP con GATEWAY_URL. NO SE PUEDE MODIFICAR.
+  portal-client:
+    build: ./services/portal
+    env_file: .env
+    ports:
+      - "${PORTAL_PORT:-8092}:8092"
+    depends_on:
+      - gateway
+
+  # Subsidios: registra los retiros por el gateway (SUBSIDIOS_TOKEN). Conserva sp_registrar_retiro
+  # como camino legacy cuando Afiliaciones vuelve a LEGACY (./rollback.sh) o el gateway se desactiva.
+  subsidios-app:
+    build: ./services/subsidios
+    env_file: .env
+    ports:
+      - "${SUBSIDIOS_PORT:-8091}:8091"
+    depends_on:
+      legacy-db:
+        condition: service_healthy
+      gateway:
+        condition: service_started
+
+  # Gateway API v1 + adapter: único servicio nuevo que habla con legacy-db (puerto de contrato 8082).
+  gateway:
+    build: ./src
+    env_file: .env
+    environment:
+      AUDIT_LOG_PATH: /app/logs/audit.log
+      STATE_DB_PATH: /data/gateway.db
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./logs:/app/logs
+      - gateway-data:/data
+    depends_on:
+      legacy-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Pruebas automatizadas del equipo: docker compose --profile test run --rm tests
+  tests:
+    build: ./tests
+    profiles: ["test"]
+    env_file: .env
+    environment:
+      GATEWAY_URL: http://gateway:8082
+      AUDIT_LOG_PATH: /logs/audit.log
+    volumes:
+      - ./test-results:/results
+      - ./logs:/logs:ro
+    depends_on:
+      gateway:
+        condition: service_healthy
+
+volumes:
+  legacy-db-data:
+  gateway-data:
