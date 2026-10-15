@@ -151,3 +151,7 @@ El reporte JUnit queda en `test-results/junit.xml`.
 - Los tokens son estáticos por consumidor; falta rotación, expiración y un gestor de secretos.
 - No hay métricas automáticas que comparen gateway contra legacy para decidir el paso de DUAL a MODERN; hoy se leen de la auditoría.
 - Los reportes nocturnos y Educación siguen leyendo la base directamente.
+- La cola de retiros pendientes vive en un SQLite del contenedor `gateway`: sirve para una sola instancia; para escalar a varias réplicas habría que moverla a un almacenamiento compartido.
+- La idempotencia usa la tabla `gateway_retirement_requests` dentro de la base legacy; es propia del gateway y no la leen otras aplicaciones, pero debe acordarse con el DBA antes de llevarla a producción.
+- Los valores canónicos de parentesco (`SPOUSE`, `CHILD`, `FATHER`, `MOTHER`) son decisión del equipo: el reto no define un catálogo oficial.
+- El panel web y la app móvil son de demostración: no tienen inicio de sesión propio y usan un token fijo del lado del servidor.
