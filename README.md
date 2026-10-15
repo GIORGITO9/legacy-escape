@@ -14,7 +14,7 @@ Capa de transición para modernizar el sistema legacy de una Caja de Compensaci�
 - Docker Engine 24 o superior con Docker Compose v2 (`docker compose`).
 - Linux, macOS o Windows con Docker Desktop (los scripts se ejecutan con `bash`).
 - Python 3.8+ solo para correr `./validator` en la máquina anfitriona.
-- Puertos libres: 8082 (gateway), 8090, 8091 y 8092.
+- Puertos libres: 8082 (gateway), 8090, 8091, 8092 y 8093 (panel web).
 
 ## Instalación y ejecución
 
@@ -34,6 +34,8 @@ Para devolver Afiliaciones al camino legacy (rollback, termina en segundos con c
 ```bash
 ./rollback.sh affiliations
 ```
+
+Panel web: abrir http://localhost:8093 en el navegador.
 
 Para volver a avanzar el dominio: `./scripts/migration-state.sh affiliations DUAL`. Para reiniciar todo desde cero: `./reset.sh`.
 
@@ -56,7 +58,7 @@ Todas las variables están en `.env.example`; se copian a `.env` (que no se vers
 ## Arquitectura
 
 ```text
-portal-client / subsidios-app / app móvil → gateway (API v1 + modelo canónico + adapter) → legacy-db ← educacion-app
+portal-client / panel-web / subsidios-app / app móvil → gateway (API v1 + modelo canónico + adapter) → legacy-db ← educacion-app
 ```
 
 - `legacy-db`: PostgreSQL con las tablas heredadas y el procedimiento de retiros.
@@ -64,6 +66,7 @@ portal-client / subsidios-app / app móvil → gateway (API v1 + modelo canónic
 - `portal-client`: portal que solo habla HTTP con `GATEWAY_URL` (sin cambios).
 - `subsidios-app`: registra los retiros por el gateway con `SUBSIDIOS_TOKEN`; si Afiliaciones está en LEGACY o el gateway no existe, usa el procedimiento legacy (rollback).
 - `educacion-app`: lee la base directamente, sin cambios, y ve los retiros porque se escriben en el legacy.
+- `panel-web`: panel web de demostración en http://localhost:8093 (estilo Apple). Busca afiliados, muestra beneficiarios y empresa, registra retiros, y muestra en vivo el estado del legacy, la migración y la auditoría. Igual que el portal, solo habla HTTP con el gateway usando `PORTAL_TOKEN` del lado del servidor.
 - `tests`: pruebas automatizadas de contrato (perfil `test`).
 
 El detalle está en [docs/architecture.md](docs/architecture.md).
