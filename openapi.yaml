@@ -1,0 +1,297 @@
+openapi: 3.0.3
+info:
+  title: Legacy Escape — Gateway API de Afiliaciones
+  version: 1.0.0
+  description: >
+    Capa de transición sobre el sistema legacy de la Caja de Compensación. Los consumidores
+    (portal, subsidios, móvil) usan el modelo canónico; el gateway traduce al esquema legacy
+    mediante un adapter. Autenticación con un token Bearer por consumidor.
+servers:
+  - url: http://localhost:8082
+security:
+  - bearerAuth: []
+paths:
+  /health:
+    get:
+      summary: Estado del gateway y del legacy
+      security: []
+      responses:
+        "200":
+          description: El gateway responde; legacy indica si la base está disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+  /api/v1/members/{document}:
+    get:
+      summary: Consulta un afiliado
+      parameters:
+        - $ref: "#/components/parameters/Document"
+      responses:
+        "200":
+          description: Afiliado en el modelo canónico
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/LegacyUnavailable"
+  /api/v1/members/{document}/beneficiaries:
+    get:
+      summary: Lista los beneficiarios de un afiliado
+      parameters:
+        - $ref: "#/components/parameters/Document"
+      responses:
+        "200":
+          description: Beneficiarios (lista vacía si no tiene)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Beneficiary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/LegacyUnavailable"
+  /api/v1/companies/{id}:
+    get:
+      summary: Consulta una empresa aportante y su número de afiliados activos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "2014"
+      responses:
+        "200":
+          description: Empresa
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "503":
+          $ref: "#/components/responses/LegacyUnavailable"
+  /api/v1/members/{document}/retirements:
+    post:
+      summary: Registra el retiro de un afiliado (idempotente por requestId)
+      description: >
+        Solo PORTAL_TOKEN y SUBSIDIOS_TOKEN pueden escribir (MOBILE_TOKEN recibe 403).
+        El retiro queda en la base legacy, visible para Educación y los reportes. Si el legacy
+        está caído se acepta con 202 y se aplica una sola vez cuando la base se recupera.
+      parameters:
+        - $ref: "#/components/parameters/Document"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RetirementRequest"
+      responses:
+        "201":
+          description: Retiro aplicado en el legacy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Retirement"
+        "200":
+          description: requestId repetido; se devuelve el resultado original sin duplicar
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Retirement"
+        "202":
+          description: Legacy caído; el retiro quedó en cola y se aplicará una sola vez
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Retirement"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/migration/status:
+    get:
+      summary: Estado de migración de cada dominio
+      responses:
+        "200":
+          description: Estados LEGACY, DUAL o MODERN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MigrationStatus"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    Document:
+      name: document
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[0-9]{3,15}$"
+      example: "1012345678"
+  responses:
+    BadRequest:
+      description: Cuerpo inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Token ausente o inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: El consumidor no tiene permiso de escritura
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Recurso inexistente
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    LegacyUnavailable:
+      description: La base legacy no responde (respuesta en menos de 3 segundos)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            message: El sistema legacy no está disponible; intente más tarde
+            error_id: 7f0c8a52-3f7e-4a0e-9a57-8d2f7f3b1c11
+            code: LEGACY_UNAVAILABLE
+  schemas:
+    Health:
+      type: object
+      required: [status, legacy]
+      properties:
+        status:
+          type: string
+          enum: [UP]
+        legacy:
+          type: string
+          enum: [UP, DOWN]
+    CompanyRef:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    Member:
+      type: object
+      required: [document, fullName, status, company]
+      properties:
+        document:
+          type: string
+        fullName:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, RETIRED, SUSPENDED]
+        company:
+          $ref: "#/components/schemas/CompanyRef"
+    Beneficiary:
+      type: object
+      required: [document, fullName, relationship]
+      properties:
+        document:
+          type: string
+        fullName:
+          type: string
+        relationship:
+          type: string
+          enum: [SPOUSE, CHILD, FATHER, MOTHER]
+    Company:
+      type: object
+      required: [id, name, activeMembers]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        activeMembers:
+          type: integer
+    RetirementRequest:
+      type: object
+      required: [requestId, date]
+      properties:
+        requestId:
+          type: string
+          maxLength: 100
+        date:
+          type: string
+          format: date
+        reason:
+          type: string
+          maxLength: 200
+    Retirement:
+      type: object
+      properties:
+        requestId:
+          type: string
+        document:
+          type: string
+        date:
+          type: string
+          format: date
+        reason:
+          type: string
+        state:
+          type: string
+          enum: [APPLIED, PENDING]
+        movementId:
+          type: integer
+          nullable: true
+    MigrationStatus:
+      type: object
+      properties:
+        domains:
+          type: object
+          properties:
+            affiliations:
+              type: string
+              enum: [LEGACY, DUAL, MODERN]
+            companies:
+              type: string
+              enum: [LEGACY, DUAL, MODERN]
+            contributions:
+              type: string
+              enum: [LEGACY, DUAL, MODERN]
+    Error:
+      type: object
+      required: [message, error_id]
+      properties:
+        message:
+          type: string
+        error_id:
+          type: string
+        code:
+          type: string
