@@ -147,8 +147,12 @@ class Gateway:
     @staticmethod
     def _json(body):
         try:
-            data = json.loads(body.decode("utf-8") or "{}")
-        except (ValueError, UnicodeDecodeError):
+            try:
+                raw = body.decode("utf-8")
+            except UnicodeDecodeError:  # clientes que envían Latin-1 (p. ej. curl en Windows)
+                raw = body.decode("latin-1")
+            data = json.loads(raw or "{}")
+        except ValueError:
             raise ApiError(400, "El cuerpo debe ser JSON válido")
         if not isinstance(data, dict):
             raise ApiError(400, "El cuerpo debe ser un objeto JSON")

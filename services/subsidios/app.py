@@ -79,6 +79,14 @@ def modo():
     return "gateway"
 
 
+def texto(raw):
+    """Cuerpo como texto: UTF-8 y, si un cliente envía Latin-1 (curl en Windows), también se acepta."""
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return raw.decode("latin-1")
+
+
 def request_id_para(data):
     """Id de idempotencia: el que envía el cliente o uno derivado de los datos (un reintento no duplica)."""
     if data.get("requestId"):
@@ -106,7 +114,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(404, {"error": "ruta no encontrada"})
         length = int(self.headers.get("Content-Length", "0"))
         try:
-            data = json.loads(self.rfile.read(length) or b"{}")
+            data = json.loads(texto(self.rfile.read(length)) or "{}")
             documento, fecha = str(data["documento"]), str(data["fecha"])
         except (ValueError, KeyError, TypeError):
             return self._send(400, {"error": "se esperan documento y fecha"})
