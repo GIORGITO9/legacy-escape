@@ -21,3 +21,11 @@ Siguiente dominio: Empresas
 - Cada petición queda en `logs/audit.log` (consumidor, ruta enmascarada, estado y latencia): de ahí salen los porcentajes y latencias de los criterios.
 - La idempotencia se comprueba contando movimientos `RET` por `requestId` (tabla `gateway_retirement_requests`): debe haber exactamente uno.
 - `./rollback.sh <dominio>` deja el dominio en LEGACY en menos de 3 minutos sin reiniciar aplicaciones; para avanzar se usa `./scripts/migration-state.sh <dominio> <estado>`.
+
+## Consumidores y camino actual
+
+- **Portal de servicios:** 100 % por el gateway (solo conoce `GATEWAY_URL`); no tiene camino legacy.
+- **Subsidios:** con Afiliaciones en DUAL registra los retiros por el gateway con `SUBSIDIOS_TOKEN`; con LEGACY (tras `./rollback.sh affiliations`) o si el gateway no responde, vuelve a `sp_registrar_retiro` sin reiniciarse.
+- **App móvil (`mobile-app`):** nuevo consumidor de solo lectura con `MOBILE_TOKEN`; nació sobre el gateway y nunca tuvo acceso a la base.
+- **Panel web (`panel-web`):** herramienta interna de demostración y operación; solo HTTP con el gateway.
+- **Educación y reportes nocturnos:** siguen leyendo la base directamente; se migran cuando el dominio pase a MODERN y exista una réplica o un endpoint equivalente.
