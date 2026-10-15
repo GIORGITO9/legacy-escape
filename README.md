@@ -23,7 +23,7 @@ Desde una copia limpia del repositorio:
 ```bash
 cp .env.example .env          # y cambiar los tokens y la clave por valores propios
 mkdir -p logs
-docker compose up -d --build  # levanta legacy-db, gateway, portal, subsidios y educación
+docker compose up -d --build  # levanta legacy-db, gateway, portal, subsidios, educación, panel y app móvil
 docker compose ps
 curl http://localhost:8082/health
 ./validator check
@@ -114,7 +114,7 @@ curl -H "Authorization: Bearer $PORTAL_TOKEN" http://localhost:8082/api/v1/migra
 
 Subsidios sigue respondiendo igual: `POST http://localhost:8091/retiros` con `{"documento", "fecha", "motivo"}`.
 Reutilizar un `requestId` para otro afiliado responde `409`. Las interfaces gráficas están en http://localhost:8093 (panel) y http://localhost:8094 (app móvil).
-Errores: `{"message", "error_id"}`; legacy caído: `503` con `"code": "LEGACY_UNAVAILABLE"` en menos de 3 segundos.
+Errores: `{"message", "error_id"}`; legacy caído: `503` con `"code": "LEGACY_UNAVAILABLE"` en menos de medio segundo (el contrato exige menos de 3).
 
 ## Pruebas
 

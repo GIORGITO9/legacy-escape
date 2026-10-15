@@ -21,11 +21,15 @@ En el panel, buscar `1019282447`: ficha, beneficiarios y empresa salen del gatew
 
 ## 2. Retiro migrado e idempotente
 
-En el panel, buscar `13149818` y pulsar **Registrar retiro**. Recargar Educación: ahora dice `RETIRADO`. Repetir el mismo retiro desde Subsidios no duplica el movimiento:
+En el panel, buscar `13149818` y pulsar **Registrar retiro**. Recargar Educación: ahora dice `RETIRADO`.
+
+Idempotencia: registrar un retiro desde Subsidios y repetir **la misma solicitud**. Las dos respuestas traen el mismo número de movimiento: el reintento no crea un segundo `RET`.
 
 ```bash
-curl -X POST -H "Content-Type: application/json" -d '{"documento":"13149818","fecha":"2026-10-05","motivo":"Retiro voluntario"}' http://localhost:8091/retiros
+curl -X POST -H "Content-Type: application/json" -d '{"documento":"1091925702","fecha":"2026-10-05","motivo":"Retiro voluntario"}' http://localhost:8091/retiros
 ```
+
+(Ejecutarlo dos veces.)
 
 ## 3. Nuevo consumidor de solo lectura
 
@@ -37,7 +41,13 @@ En la app móvil, buscar `6039066119` y pulsar **Solicitar retiro**: el gateway 
 docker compose stop legacy-db
 ```
 
-El panel muestra el aviso rojo; las consultas responden 503 `LEGACY_UNAVAILABLE` en menos de medio segundo y un retiro queda en cola (202). Al volver la base se aplica una sola vez:
+El panel muestra el aviso rojo y las consultas responden 503 `LEGACY_UNAVAILABLE` en menos de medio segundo. Un retiro enviado por Subsidios durante la caída se acepta con 202 (`PENDIENTE`) y queda en cola:
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"documento":"1005584867","fecha":"2026-10-05","motivo":"Retiro durante la caida"}' http://localhost:8091/retiros
+```
+
+Al volver la base, la cola lo aplica una sola vez y Educación lo ve (http://localhost:8090/afiliados/1005584867 dice `RETIRADO`):
 
 ```bash
 docker compose start legacy-db

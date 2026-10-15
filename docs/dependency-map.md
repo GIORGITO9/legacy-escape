@@ -1,8 +1,8 @@
 # Mapa de dependencias del legacy
 
 Dependencias directas que tienen hoy las aplicaciones sobre la base legacy (fuente: `docs/procesos.md`,
-el código de `services/` y el procedimiento `sp_registrar_retiro`). El portal y la app móvil no aparecen
-porque no tocan la base: solo hablan HTTP con el gateway.
+el código de `services/` y el procedimiento `sp_registrar_retiro`). El portal, la app móvil y el panel web
+no aparecen porque no tocan la base: solo hablan HTTP con el gateway.
 
 | Aplicación | Tabla | Operación | Criticidad |
 |---|---|---|---|

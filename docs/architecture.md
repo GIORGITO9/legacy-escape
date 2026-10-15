@@ -7,7 +7,7 @@ La Caja de Compensación opera sobre una base legacy (réplica de Informix/Gener
 ## Componentes
 
 - **legacy-db:** PostgreSQL con las tablas heredadas (`AFI_MAE`, `AFI_BEN`, `EMPRESA`, `APORTES`, `LOGMOV`) y el procedimiento de retiros. No se modifica su contrato.
-- **gateway (src/app):** API REST v1 en el puerto 8082. Autentica con un token Bearer por consumidor, aplica permisos (móvil solo lee), escribe la auditoría en `logs/audit.log` con el documento enmascarado, expone el estado de migración y mantiene una cola de retiros en un volumen propio (SQLite) para tolerar la caída del legacy.
+- **gateway (src/app):** API REST v1 en el puerto 8082. Autentica con un token Bearer por consumidor, aplica permisos (móvil solo lee), escribe la auditoría en `logs/audit.log` con el documento enmascarado, expone el estado de migración y mantiene una cola de retiros en un volumen propio (SQLite) para tolerar la caída del legacy. Un monitor revisa la base cada segundo y guarda su IP: si está caída, las consultas responden 503 al instante en vez de esperar al DNS de Docker.
 - **adapter (src/adapter/legacy_repository.py):** único código nuevo que conoce tablas, columnas, códigos y el procedimiento legacy; traduce al modelo canónico. Corre dentro del contenedor del gateway.
 - **portal-client:** solo habla HTTP con `GATEWAY_URL`.
 - **panel-web:** panel de demostración (puerto 8093) que consume el gateway por HTTP con `PORTAL_TOKEN` guardado en el servidor; permite buscar afiliados, registrar retiros y ver el estado del legacy, la migración y la auditoría en vivo.
@@ -26,7 +26,7 @@ El contrato usa nombres de negocio en inglés y valores cerrados, independientes
 - **Beneficiary:** `document`, `fullName`, `relationship` (`C`→`SPOUSE`, `H`→`CHILD`, `P`→`FATHER`, `M`→`MOTHER`).
 - **Company:** `id`, `name`, `activeMembers` (afiliados con estado activo).
 - **Retirement:** `requestId` (clave de idempotencia), `document`, `date`, `reason`, `state` (`APPLIED` o `PENDING`) y `movementId`.
-- **Error:** `message` y `error_id` (y `code` = `LEGACY_UNAVAILABLE` cuando la base no responde), sin trazas ni SQL.
+- **Error:** `message` y `error_id` (y `code` = `LEGACY_UNAVAILABLE` cuando la base no responde), sin trazas ni SQL. Códigos: 400 cuerpo inválido, 401 sin token, 403 sin permiso de escritura, 404 inexistente, 405 método no permitido, 409 `requestId` usado para otro afiliado y 503 legacy caído.
 
 Las clases viven en `src/app/domain.py`; los códigos de una letra solo existen dentro del adapter.
 
