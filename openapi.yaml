@@ -125,6 +125,12 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
+        "409":
+          description: El requestId ya se usó para registrar el retiro de otro afiliado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /api/v1/migration/status:
     get:
       summary: Estado de migración de cada dominio

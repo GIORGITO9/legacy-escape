@@ -4,7 +4,7 @@ import logging
 import threading
 import time
 
-from app.domain import LegacyUnavailable, NotFound, Retirement
+from app.domain import Conflict, LegacyUnavailable, NotFound, Retirement
 from app.store import APPLIED, PENDING, REJECTED
 
 log = logging.getLogger("gateway.service")
@@ -23,6 +23,8 @@ class RetirementService:
         (se aplica al recuperarse, una sola vez) · NotFound si el afiliado no existe.
         """
         local = self.store.get_retirement(request_id)
+        if local and local["document"] != document:
+            raise Conflict("El requestId ya se usó para otro afiliado")
         if local and local["status"] == APPLIED:
             return 200, local["result"]
         if local and local["status"] == REJECTED:
@@ -31,6 +33,8 @@ class RetirementService:
             document, date, reason, consumer = local["document"], local["date"], local["reason"], local["consumer"]
         try:
             retirement, created = self.repository.register_retirement(request_id, document, date, reason, consumer)
+        except Conflict:
+            raise
         except NotFound:
             if local:
                 self.store.save_result(request_id, document, date, reason, consumer, REJECTED, None)
@@ -53,7 +57,7 @@ class RetirementService:
                 self.store.save_result(item["request_id"], item["document"], item["date"], item["reason"],
                                        item["consumer"], APPLIED, retirement.to_dict())
                 log.info("retiro pendiente aplicado: %s", item["request_id"])
-            except NotFound:
+            except (NotFound, Conflict):
                 self.store.save_result(item["request_id"], item["document"], item["date"], item["reason"],
                                        item["consumer"], REJECTED, None)
             except LegacyUnavailable:

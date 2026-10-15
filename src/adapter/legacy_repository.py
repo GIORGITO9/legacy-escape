@@ -17,7 +17,7 @@ import time
 import psycopg2
 import psycopg2.errors
 
-from app.domain import (Beneficiary, Company, CompanyRef, LegacyUnavailable, Member, NotFound,
+from app.domain import (Beneficiary, Company, CompanyRef, Conflict, LegacyUnavailable, Member, NotFound,
                         Retirement, full_name)
 
 # Variantes conocidas del maestro de afiliados (antes y después del cambio de esquema).
@@ -238,6 +238,8 @@ class LegacyRepository:
                                 "WHERE request_id = %s", (request_id,))
                     row = cur.fetchone()
                     conn.commit()
+                    if row[0] != document:
+                        raise Conflict("El requestId ya se usó para otro afiliado")
                     return Retirement(requestId=request_id, document=row[0], date=row[1].isoformat(),
                                       reason=row[2] or "", movementId=row[3]), False
                 try:

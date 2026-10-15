@@ -19,7 +19,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
 
 from adapter.legacy_repository import LegacyRepository
-from app.domain import LegacyUnavailable, NotFound
+from app.domain import Conflict, LegacyUnavailable, NotFound
 from app.service import RetirementService
 from app.store import Store
 
@@ -177,6 +177,8 @@ class Gateway:
             status, payload = exc.status, self._error(exc.message, exc.code)
         except NotFound as exc:
             status, payload = 404, self._error(str(exc))
+        except Conflict as exc:
+            status, payload = 409, self._error(str(exc))
         except LegacyUnavailable:
             status, payload = 503, self._error("El sistema legacy no está disponible; intente más tarde", "LEGACY_UNAVAILABLE")
         except Exception as exc:  # noqa: BLE001 — nunca se exponen trazas ni SQL al cliente

@@ -21,6 +21,10 @@ class NotFound(Exception):
     """El recurso pedido no existe."""
 
 
+class Conflict(Exception):
+    """El requestId ya se usó para otro afiliado."""
+
+
 @dataclass
 class CompanyRef:
     id: str
