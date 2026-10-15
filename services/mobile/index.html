@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f2f2f7">
+<title>Mi Caja</title>
+<style>
+  :root {
+    --bg: #f2f2f7; --card: #ffffff; --text: #000000; --secondary: #8a8a8e; --separator: rgba(60, 60, 67, 0.18);
+    --fill: rgba(118, 118, 128, 0.12); --blue: #007aff; --green: #34c759; --orange: #ff9500; --red: #ff3b30; --gray: #8e8e93;
+    --desk: linear-gradient(160deg, #dfe9f7, #eef0f7 45%, #f4ecf4);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000; --card: #1c1c1e; --text: #ffffff; --secondary: #8d8d93; --separator: rgba(84, 84, 88, 0.6);
+      --fill: rgba(118, 118, 128, 0.24); --blue: #0a84ff; --green: #30d158; --orange: #ff9f0a; --red: #ff453a;
+      --desk: linear-gradient(160deg, #0b1220, #101014 50%, #160f18);
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Segoe UI", Roboto, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; letter-spacing: -0.01em; color: var(--text);
+    background: var(--desk); min-height: 100vh; display: flex; align-items: center; justify-content: center; gap: 56px; padding: 24px;
+  }
+  .mono { font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; letter-spacing: 0; }
+
+  /* Marco del teléfono (solo en pantallas grandes) */
+  .phone { width: 390px; height: 800px; border-radius: 56px; padding: 12px; background: #1a1a1c; box-shadow: 0 0 0 2px #3a3a3c, 0 30px 80px rgba(0, 0, 0, 0.35); position: relative; flex: none; }
+  .screen { width: 100%; height: 100%; border-radius: 44px; overflow: hidden; background: var(--bg); position: relative; display: flex; flex-direction: column; }
+  .island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 120px; height: 34px; border-radius: 20px; background: #000; z-index: 5; }
+  .statusbar { height: 54px; flex: none; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 30px 6px; font-size: 15px; font-weight: 600; }
+  .side { max-width: 360px; }
+  .side h1 { font-size: 40px; font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; }
+  .side p { color: var(--secondary); font-size: 17px; line-height: 1.45; margin-top: 12px; }
+  .side ul { margin-top: 18px; list-style: none; display: grid; gap: 10px; }
+  .side li { font-size: 15px; line-height: 1.4; padding-left: 24px; position: relative; }
+  .side li b { color: var(--green); position: absolute; left: 0; }
+  @media (max-width: 860px) {
+    body { padding: 0; display: block; background: var(--bg); }
+    .side { display: none; }
+    .phone { width: 100%; height: 100vh; height: 100dvh; border-radius: 0; padding: 0; background: none; box-shadow: none; }
+    .screen { border-radius: 0; }
+    .island, .statusbar { display: none; }
+  }
+
+  .content { flex: 1; overflow-y: auto; padding: 8px 16px 110px; }
+  .large-title { font-size: 34px; font-weight: 700; letter-spacing: -0.03em; padding: 6px 4px 4px; }
+  .caption { color: var(--secondary); font-size: 13px; padding: 0 4px 12px; display: flex; align-items: center; gap: 6px; }
+  .lock { display: inline-flex; align-items: center; gap: 4px; background: var(--fill); padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+  .searchbar { display: flex; align-items: center; gap: 8px; background: var(--fill); border-radius: 12px; height: 40px; padding: 0 10px; }
+  .searchbar svg { width: 16px; height: 16px; color: var(--secondary); flex: none; }
+  .searchbar input { flex: 1; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 17px; min-width: 0; }
+  .searchbar button { border: 0; background: none; color: var(--blue); font: inherit; font-size: 17px; cursor: pointer; }
+  .recents { display: flex; gap: 8px; overflow-x: auto; padding: 12px 2px 4px; scrollbar-width: none; }
+  .recents button { flex: none; border: 0; background: var(--card); color: var(--blue); padding: 7px 12px; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+
+  .section { margin-top: 22px; }
+  .section-title { font-size: 13px; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.02em; padding: 0 16px 7px; }
+  .group { background: var(--card); border-radius: 12px; overflow: hidden; }
+  .cell { display: flex; align-items: center; gap: 12px; padding: 11px 16px; min-height: 46px; }
+  .cell + .cell { border-top: 0.5px solid var(--separator); margin-left: 16px; padding-left: 0; }
+  .cell .ic { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: white; font-size: 14px; font-weight: 600; flex: none; }
+  .cell .grow { flex: 1; min-width: 0; }
+  .cell .t { font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cell .s { font-size: 13px; color: var(--secondary); margin-top: 1px; }
+  .cell .v { color: var(--secondary); font-size: 17px; flex: none; }
+
+  .hero-card { background: var(--card); border-radius: 18px; padding: 22px 18px; text-align: center; margin-top: 18px; }
+  .avatar { width: 84px; height: 84px; border-radius: 50%; margin: 0 auto 12px; display: grid; place-items: center; font-size: 32px; font-weight: 600; color: white; background: linear-gradient(135deg, #64d2ff, var(--blue) 55%, #5856d6); }
+  .hero-card h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+  .hero-card .doc { color: var(--secondary); font-size: 15px; margin-top: 3px; }
+  .badge { display: inline-block; margin-top: 10px; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+  .ACTIVE { background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green); }
+  .RETIRED { background: var(--fill); color: var(--secondary); }
+  .SUSPENDED { background: color-mix(in srgb, var(--orange) 16%, transparent); color: var(--orange); }
+
+  .try { margin-top: 22px; width: 100%; height: 50px; border: 0; border-radius: 14px; background: var(--card); color: var(--red); font: inherit; font-size: 17px; cursor: pointer; }
+  .note { color: var(--secondary); font-size: 13px; padding: 7px 16px 0; line-height: 1.35; }
+  .empty { text-align: center; color: var(--secondary); padding: 70px 24px; font-size: 15px; line-height: 1.4; }
+  .empty .g { font-size: 46px; margin-bottom: 10px; }
+  .empty b { display: block; color: var(--text); font-size: 20px; margin-bottom: 6px; }
+
+  .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 84px; display: flex; justify-content: space-around; padding-top: 8px;
+    background: color-mix(in srgb, var(--bg) 80%, transparent); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-top: 0.5px solid var(--separator); }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: var(--gray); }
+  .tab.on { color: var(--blue); }
+  .tab svg { width: 26px; height: 26px; }
+
+  .alert-bg { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.35); display: none; align-items: center; justify-content: center; z-index: 10; }
+  .alert-bg.open { display: flex; }
+  .alert { width: 270px; border-radius: 14px; overflow: hidden; text-align: center; background: color-mix(in srgb, var(--card) 92%, transparent); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); }
+  .alert h3 { font-size: 17px; font-weight: 600; padding: 19px 16px 2px; }
+  .alert p { font-size: 13px; padding: 2px 16px 19px; line-height: 1.35; }
+  .alert button { width: 100%; border: 0; border-top: 0.5px solid var(--separator); background: none; color: var(--blue); font: inherit; font-size: 17px; font-weight: 600; height: 44px; cursor: pointer; }
+</style>
+</head>
+<body>
+<section class="side">
+  <h1>Mi Caja,<br>en el bolsillo.</h1>
+  <p>La app móvil es el nuevo consumidor del evento 3: usa la misma API del gateway, sin tocar la base legacy y sin permisos de escritura.</p>
+  <ul>
+    <li><b>✓</b> Consulta afiliados y beneficiarios con <span class="mono">MOBILE_TOKEN</span></li>
+    <li><b>✓</b> Cada consulta queda en la auditoría como <span class="mono">consumer: mobile</span></li>
+    <li><b>✓</b> Si intenta registrar un retiro, el gateway responde <span class="mono">403</span></li>
+  </ul>
+</section>
+
+<div class="phone">
+  <div class="screen">
+    <div class="island"></div>
+    <div class="statusbar"><span id="clock">9:41</span><span>●●●●  ▮</span></div>
+    <div class="content" id="content">
+      <div class="large-title">Afiliados</div>
+      <div class="caption"><span class="lock">🔒 Solo lectura</span> MOBILE_TOKEN</div>
+      <form class="searchbar" id="search" autocomplete="off">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="doc" inputmode="numeric" placeholder="Documento" aria-label="Documento">
+        <button>Buscar</button>
+      </form>
+      <div class="recents">
+        <button data-doc="1019282447">1019282447</button>
+        <button data-doc="6039066119">6039066119</button>
+        <button data-doc="1040629446">1040629446</button>
+        <button data-doc="1322694345">1322694345</button>
+      </div>
+      <div id="result"><div class="empty"><div class="g">📱</div><b>Consulta tu afiliación</b>Escribe un documento para ver tu estado, tu empresa y tus beneficiarios.</div></div>
+    </div>
+    <nav class="tabbar">
+      <div class="tab on"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2c-4.4 0-8 2.2-8 5v1.5h16V19c0-2.8-3.6-5-8-5Z"/></svg>Afiliados</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 5h16v3H4zM4 10.5h16v3H4zM4 16h10v3H4z"/></svg>Servicios</div>
+      <div class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z"/></svg>Ayuda</div>
+    </nav>
+    <div class="alert-bg" id="alert"><div class="alert"><h3 id="a-title"></h3><p id="a-text"></p><button id="a-ok">OK</button></div></div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const STATUS = { ACTIVE: "Activo", RETIRED: "Retirado", SUSPENDED: "Suspendido" };
+const REL = { SPOUSE: ["Cónyuge", "#ff2d55", "♥"], CHILD: ["Hijo(a)", "#ff9500", "★"], FATHER: ["Padre", "#5856d6", "P"], MOTHER: ["Madre", "#af52de", "M"] };
+const cap = (s) => String(s || "").toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase());
+let current = null;
+
+function clock() { const d = new Date(); $("clock").textContent = d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0"); }
+function alertBox(title, text) { $("a-title").textContent = title; $("a-text").textContent = text; $("alert").classList.add("open"); }
+
+async function lookup(doc) {
+  doc = String(doc || "").replace(/\D/g, "");
+  if (!doc) return;
+  $("doc").value = doc;
+  try {
+    const res = await fetch("/api/members/" + doc);
+    const data = await res.json();
+    if (res.status === 200) { current = data; render(data); return; }
+    current = null;
+    const msg = res.status === 404 ? ["🤷", "Sin resultados", "No hay un afiliado con ese documento."]
+      : res.status === 503 ? ["🔌", "Servicio no disponible", "El sistema de la Caja está en mantenimiento. Intenta en unos minutos."]
+      : ["⚠️", "No se pudo consultar", data.message || ("Error " + res.status)];
+    $("result").innerHTML = `<div class="empty"><div class="g">${msg[0]}</div><b>${esc(msg[1])}</b>${esc(msg[2])}</div>`;
+  } catch (e) {
+    $("result").innerHTML = '<div class="empty"><div class="g">📶</div><b>Sin conexión</b>Revisa tu conexión e intenta de nuevo.</div>';
+  }
+}
+
+function render({ member, beneficiaries }) {
+  const ini = member.fullName.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]).join("");
+  const company = member.company || {};
+  const bens = beneficiaries.length ? beneficiaries.map((b) => {
+    const [label, color, icon] = REL[b.relationship] || [b.relationship, "#8e8e93", "•"];
+    return `<div class="cell"><div class="ic" style="background:${color}">${icon}</div><div class="grow"><div class="t">${esc(cap(b.fullName))}</div><div class="s">${esc(label)}</div></div></div>`;
+  }).join("") : '<div class="cell"><div class="grow"><div class="s" style="font-size:15px">Sin beneficiarios registrados</div></div></div>';
+  $("result").innerHTML = `
+    <div class="hero-card">
+      <div class="avatar">${esc(ini)}</div>
+      <h2>${esc(cap(member.fullName))}</h2>
+      <div class="doc mono">CC ${esc(member.document)}</div>
+      <span class="badge ${esc(member.status)}">${esc(STATUS[member.status] || member.status)}</span>
+    </div>
+    <div class="section"><div class="section-title">Empresa</div>
+      <div class="group"><div class="cell"><div class="ic" style="background:#34c759">🏢</div><div class="grow"><div class="t">${esc(cap(company.name || "—"))}</div><div class="s mono">${esc(company.id || "")}</div></div></div></div>
+    </div>
+    <div class="section"><div class="section-title">Beneficiarios · ${beneficiaries.length}</div><div class="group">${bens}</div></div>
+    <button class="try" id="try">Solicitar retiro</button>
+    <div class="note">La app móvil es de solo lectura: los retiros se gestionan en Subsidios o en el portal.</div>`;
+  $("try").onclick = tryRetire;
+}
+
+async function tryRetire() {
+  if (!current) return;
+  const res = await fetch(`/api/members/${current.member.document}/retirements`, { method: "POST" });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 403) alertBox("Acción no permitida", "La app móvil solo puede consultar. El gateway respondió 403: " + (data.message || "sin permiso de escritura") + ".");
+  else alertBox("Respuesta " + res.status, data.message || "Inesperado");
+}
+
+$("search").addEventListener("submit", (e) => { e.preventDefault(); lookup($("doc").value); });
+document.querySelectorAll(".recents button").forEach((b) => b.addEventListener("click", () => lookup(b.dataset.doc)));
+$("a-ok").onclick = () => $("alert").classList.remove("open");
+clock(); setInterval(clock, 30000);
+</script>
+</body>
+</html>

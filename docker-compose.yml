@@ -78,6 +78,15 @@ services:
     depends_on:
       - gateway
 
+  # App móvil (evento 3): nuevo consumidor de solo lectura con MOBILE_TOKEN; solo habla HTTP con el gateway.
+  mobile-app:
+    build: ./services/mobile
+    env_file: .env
+    ports:
+      - "${MOBILE_PORT:-8094}:8094"
+    depends_on:
+      - gateway
+
   # Pruebas automatizadas del equipo: docker compose --profile test run --rm tests
   tests:
     build: ./tests
